@@ -40,7 +40,8 @@ function defaultShell(): string {
 
 function defaultWorkspace(): string {
   if (process.env.WORKSPACE_ROOT) return process.env.WORKSPACE_ROOT;
-  if (process.platform === "win32") return "C:\\Workspace";
+  // On Windows, default to a Workspace folder inside the user's home dir —
+  // works for non-admin users without write access to C:\.
   return path.join(os.homedir(), "Workspace");
 }
 

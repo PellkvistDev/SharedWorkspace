@@ -80,7 +80,8 @@ statically, so once you've built, a single `pnpm start` runs everything.
    secret (sessions invalidate on restart).
 
 4. **Point `WORKSPACE_ROOT` at the folder you want exposed.** Default:
-   `C:\Workspace` on Windows. Everything in the file explorer is sandboxed
+   `%USERPROFILE%\Workspace` on Windows (e.g. `C:\Users\you\Workspace`).
+   Everything in the file explorer is sandboxed
    to this directory — paths that try to escape (including via symlinks)
    are rejected by `server/src/fs-sandbox.ts`.
 
@@ -207,7 +208,7 @@ service management.
 Create a dedicated, non-privileged Windows account (e.g. `workspaceos`)
 and grant it:
 
-- Read/write on the workspace root only (`C:\Workspace` by default).
+- Read/write on the workspace root only (`%USERPROFILE%\Workspace` by default).
 - "Log on as a service" right (via `secpol.msc` → Local Policies → User
   Rights Assignment).
 - No admin group membership.
