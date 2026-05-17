@@ -79,6 +79,27 @@ export default function Browser() {
     reloadBookmarks();
   };
 
+  const saveCurrentUrl = async () => {
+    const target = prompt(
+      "Download URL to Workspace/downloads:",
+      url
+    );
+    if (!target) return;
+    try {
+      const r = await api.post<{ ok: boolean; path?: string; size?: number; error?: string }>(
+        "/api/downloads/fetch",
+        { url: target }
+      );
+      if (r.ok) {
+        alert(`Saved to /${r.path}`);
+      } else {
+        alert("Download failed: " + (r.error || "unknown"));
+      }
+    } catch (e: any) {
+      alert("Download failed: " + e.message);
+    }
+  };
+
   const displayedSrc = () => {
     if (proxied) return `/api/proxy?url=${encodeURIComponent(url)}`;
     return url;
@@ -105,7 +126,10 @@ export default function Browser() {
         <button className="btn btn-ghost text-xs" onClick={enableProxy} title="Use server-side proxy">
           {proxied ? "Proxied" : "Proxy"}
         </button>
-        <button className="btn btn-ghost text-xs" onClick={addBookmark}>★</button>
+        <button className="btn btn-ghost text-xs" onClick={saveCurrentUrl} title="Save URL to Workspace/downloads">
+          ⬇
+        </button>
+        <button className="btn btn-ghost text-xs" onClick={addBookmark} title="Bookmark">★</button>
       </div>
 
       {bookmarks.length > 0 && (

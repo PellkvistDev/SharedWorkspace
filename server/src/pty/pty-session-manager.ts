@@ -63,7 +63,14 @@ class Manager {
   spawn(opts: PtySpawnOptions): PtySession {
     const id = uuid();
     const cwd = opts.cwd || workspaceRoot();
-    const env = { ...process.env, ...(opts.env || {}), TERM: "xterm-256color" } as Record<string, string>;
+    // Force cmd.exe to show "C:\path>" prompt (Windows default sometimes
+    // gets stripped under pty). Harmless on other shells.
+    const env = {
+      ...process.env,
+      PROMPT: "$P$G",
+      ...(opts.env || {}),
+      TERM: "xterm-256color",
+    } as Record<string, string>;
     let pty: IPty;
     try {
       pty = ptySpawn(opts.shell, opts.args ?? [], {

@@ -46,6 +46,28 @@ export default function FileExplorer() {
 
   useEffect(() => { load(""); }, [load]);
 
+  // Auto-refresh when window regains focus (catches files created on the PC
+  // while you were elsewhere).
+  useEffect(() => {
+    const refresh = () => load(data?.cwd || "");
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [load, data?.cwd]);
+
+  const moveTo = async (sourceRelPath: string, destDirRelPath: string) => {
+    const name = sourceRelPath.includes("/")
+      ? sourceRelPath.slice(sourceRelPath.lastIndexOf("/") + 1)
+      : sourceRelPath;
+    const to = destDirRelPath ? `${destDirRelPath}/${name}` : name;
+    if (to === sourceRelPath) return;
+    try {
+      await api.post("/api/files/rename", { from: sourceRelPath, to });
+      load(data?.cwd || "");
+    } catch (e: any) {
+      alert("Move failed: " + e.message);
+    }
+  };
+
   useEffect(() => {
     if (!selected || selected.kind !== "file") {
       setPreview(null);
@@ -122,24 +144,38 @@ export default function FileExplorer() {
     }
   };
 
-  const onDrop = async (ev: React.DragEvent) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    if (!ev.dataTransfer.files.length) return;
+  const uploadFiles = async (files: File[], destPath?: string) => {
+    if (!files.length) return;
     const fd = new FormData();
-    for (const f of Array.from(ev.dataTransfer.files)) fd.append("file", f, f.name);
+    for (const f of files) fd.append("file", f, f.name);
     try {
-      const res = await fetch(`/api/files/upload?path=${encodeURIComponent(data?.cwd || "")}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "x-csrf-token": (await api.get<{ csrf?: string }>("/api/auth/status")).csrf || "" },
-        body: fd,
-      });
+      const csrfRes = await api.get<{ csrf?: string }>("/api/auth/status");
+      const res = await fetch(
+        `/api/files/upload?path=${encodeURIComponent(destPath ?? data?.cwd ?? "")}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "x-csrf-token": csrfRes.csrf || "" },
+          body: fd,
+        }
+      );
       if (!res.ok) throw new Error(await res.text());
       load(data?.cwd || "");
     } catch (e: any) {
       alert("Upload failed: " + e.message);
     }
+  };
+
+  const onDrop = async (ev: React.DragEvent) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (ev.dataTransfer.files.length) {
+      uploadFiles(Array.from(ev.dataTransfer.files));
+      return;
+    }
+    // Internal move into current folder
+    const src = ev.dataTransfer.getData("application/x-wos-path");
+    if (src) moveTo(src, data?.cwd || "");
   };
 
   return (
@@ -157,8 +193,30 @@ export default function FileExplorer() {
               className="btn btn-ghost text-xs px-2"
               disabled={!data?.parent && data?.cwd === ""}
               onClick={() => load(data?.parent ?? "")}
+              onDragOver={(ev) => {
+                if (data?.parent != null) {
+                  ev.preventDefault();
+                  ev.dataTransfer.dropEffect = "move";
+                }
+              }}
+              onDrop={(ev) => {
+                const src = ev.dataTransfer.getData("application/x-wos-path");
+                if (src && data?.parent != null) {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  moveTo(src, data.parent);
+                }
+              }}
+              title="Up (drop to move into parent)"
             >
               ↑
+            </button>
+            <button
+              className="btn btn-ghost text-xs px-2"
+              onClick={() => load(data?.cwd || "")}
+              title="Refresh"
+            >
+              ↻
             </button>
             <div className="font-mono truncate text-white/80 flex-1">
               /{data?.cwd || ""}
@@ -199,8 +257,40 @@ export default function FileExplorer() {
               key={e.path}
               onClick={() => { setSelected(e); }}
               onDoubleClick={() => openEntry(e)}
+              draggable
+              onDragStart={(ev) => {
+                ev.dataTransfer.setData("application/x-wos-path", e.path);
+                ev.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(ev) => {
+                if (e.kind === "directory") {
+                  ev.preventDefault();
+                  ev.dataTransfer.dropEffect = "move";
+                  ev.currentTarget.classList.add("ring-1", "ring-sky-400/60");
+                }
+              }}
+              onDragLeave={(ev) => {
+                ev.currentTarget.classList.remove("ring-1", "ring-sky-400/60");
+              }}
+              onDrop={(ev) => {
+                ev.currentTarget.classList.remove("ring-1", "ring-sky-400/60");
+                if (e.kind !== "directory") return;
+                // OS-file drop?
+                if (ev.dataTransfer.files.length) {
+                  // Forward to the sidebar drop handler with this folder as target.
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  uploadFiles(Array.from(ev.dataTransfer.files), e.path);
+                  return;
+                }
+                const src = ev.dataTransfer.getData("application/x-wos-path");
+                if (!src || src === e.path) return;
+                ev.preventDefault();
+                ev.stopPropagation();
+                moveTo(src, e.path);
+              }}
               className={clsx(
-                "flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-white/10",
+                "flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-white/10 rounded transition",
                 selected?.path === e.path && "bg-white/15"
               )}
             >

@@ -12,6 +12,7 @@ interface TabState {
   term: XTerm;
   fit: FitAddon;
   ws?: WebSocket;
+  mounted: boolean;
 }
 
 const MOBILE_KEYS = [
@@ -50,13 +51,15 @@ function makeTerm(): { term: XTerm; fit: FitAddon } {
 export default function Terminal({ active }: { active: boolean }) {
   const [tabs, setTabs] = useState<TabState[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const paneRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const newTab = () => {
     const { term, fit } = makeTerm();
     const id = crypto.randomUUID();
-    const tab: TabState = { id, label: `T${tabs.length + 1}`, term, fit };
-    setTabs((t) => [...t, tab]);
+    setTabs((t) => {
+      const tab: TabState = { id, label: `T${t.length + 1}`, term, fit, mounted: false };
+      return [...t, tab];
+    });
     setActiveId(id);
   };
 
@@ -65,51 +68,50 @@ export default function Terminal({ active }: { active: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Mount and connect active tab
+  // Mount each tab's xterm into its own DOM node — exactly once. Switching tabs
+  // just toggles visibility; we never re-open() the xterm into a new node, which
+  // is what was corrupting the renderer.
   useEffect(() => {
-    if (!activeId || !containerRef.current) return;
-    const tab = tabs.find((t) => t.id === activeId);
-    if (!tab) return;
-    // Re-open the same xterm element
-    containerRef.current.innerHTML = "";
-    tab.term.open(containerRef.current);
-    tab.fit.fit();
-
-    if (!tab.ws) {
-      const proto = location.protocol === "https:" ? "wss" : "ws";
-      const url = `${proto}://${location.host}/ws/terminal?cols=${tab.term.cols}&rows=${tab.term.rows}${
-        tab.sessionId ? `&sessionId=${tab.sessionId}` : ""
-      }`;
-      const ws = new WebSocket(url);
-      tab.ws = ws;
-      const send = (m: ClientPtyMsg) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(m));
-
-      ws.onmessage = (ev) => {
-        const msg: ServerPtyMsg = JSON.parse(ev.data);
-        if (msg.type === "data") tab.term.write(msg.data);
-        else if (msg.type === "ready") tab.sessionId = msg.sessionId;
-        else if (msg.type === "exit") tab.term.writeln(`\r\n[process exited: ${msg.code}]`);
-        else if (msg.type === "error") tab.term.writeln(`\r\n[error: ${msg.message}]`);
-      };
-      ws.onopen = () => {
-        send({ type: "resize", cols: tab.term.cols, rows: tab.term.rows });
-      };
-      tab.term.onData((d) => send({ type: "input", data: d }));
-      tab.term.onResize(({ cols, rows }) => send({ type: "resize", cols, rows }));
-    }
-
-    const onResize = () => {
+    for (const tab of tabs) {
+      if (tab.mounted) continue;
+      const el = paneRefs.current.get(tab.id);
+      if (!el) continue;
+      tab.term.open(el);
       try { tab.fit.fit(); } catch {}
-    };
-    window.addEventListener("resize", onResize);
-    setTimeout(onResize, 50);
-    return () => window.removeEventListener("resize", onResize);
-  }, [activeId, tabs]);
+      tab.mounted = true;
 
+      // Connect WS for this tab
+      if (!tab.ws) {
+        const proto = location.protocol === "https:" ? "wss" : "ws";
+        const url = `${proto}://${location.host}/ws/terminal?cols=${tab.term.cols}&rows=${tab.term.rows}${
+          tab.sessionId ? `&sessionId=${tab.sessionId}` : ""
+        }`;
+        const ws = new WebSocket(url);
+        tab.ws = ws;
+        const send = (m: ClientPtyMsg) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(m));
+
+        ws.onmessage = (ev) => {
+          const msg: ServerPtyMsg = JSON.parse(ev.data);
+          if (msg.type === "data") tab.term.write(msg.data);
+          else if (msg.type === "ready") tab.sessionId = msg.sessionId;
+          else if (msg.type === "exit") tab.term.writeln(`\r\n[process exited: ${msg.code}]`);
+          else if (msg.type === "error") tab.term.writeln(`\r\n[error: ${msg.message}]`);
+        };
+        ws.onopen = () => send({ type: "resize", cols: tab.term.cols, rows: tab.term.rows });
+        tab.term.onData((d) => send({ type: "input", data: d }));
+        tab.term.onResize(({ cols, rows }) => send({ type: "resize", cols, rows }));
+      }
+    }
+  }, [tabs]);
+
+  // Refit active tab when it becomes visible or window resizes.
   useEffect(() => {
-    if (!active) return;
-    const t = tabs.find((x) => x.id === activeId);
-    if (t) setTimeout(() => { try { t.fit.fit(); } catch {} }, 50);
+    const tab = tabs.find((x) => x.id === activeId);
+    if (!tab || !tab.mounted) return;
+    const refit = () => { try { tab.fit.fit(); } catch {} };
+    const t = setTimeout(refit, 30);
+    window.addEventListener("resize", refit);
+    return () => { clearTimeout(t); window.removeEventListener("resize", refit); };
   }, [active, activeId, tabs]);
 
   const closeTab = (id: string) => {
@@ -117,6 +119,7 @@ export default function Terminal({ active }: { active: boolean }) {
     if (t) {
       try { t.ws?.close(); } catch {}
       try { t.term.dispose(); } catch {}
+      paneRefs.current.delete(id);
     }
     const remaining = tabs.filter((x) => x.id !== id);
     setTabs(remaining);
@@ -153,7 +156,24 @@ export default function Terminal({ active }: { active: boolean }) {
         ))}
         <button className="btn btn-ghost text-xs ml-1" onClick={newTab}>+ New</button>
       </div>
-      <div ref={containerRef} className="flex-1 min-h-0 p-2 bg-black/30 backdrop-blur-sm" />
+
+      {/* Render every tab's xterm into its own div. Hide inactive ones. */}
+      <div className="flex-1 min-h-0 relative">
+        {tabs.map((t) => (
+          <div
+            key={t.id}
+            ref={(el) => {
+              if (el) paneRefs.current.set(t.id, el);
+              else paneRefs.current.delete(t.id);
+            }}
+            className={clsx(
+              "absolute inset-0 p-2 bg-black/30 backdrop-blur-sm",
+              t.id !== activeId && "invisible pointer-events-none"
+            )}
+          />
+        ))}
+      </div>
+
       <div className="md:hidden flex gap-1 px-1 py-1 border-t border-white/10 overflow-x-auto">
         {MOBILE_KEYS.map((k) => (
           <button key={k.label} className="btn btn-ghost text-xs whitespace-nowrap" onClick={() => sendKey(k.send)}>
