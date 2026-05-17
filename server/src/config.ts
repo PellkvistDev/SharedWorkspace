@@ -1,6 +1,25 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import path from "node:path";
+import fs from "node:fs";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
+
+// Look for .env in cwd, then walk up from this file's location toward the
+// monorepo root. This lets users keep one .env at the repo root regardless
+// of which workspace package runs.
+const __filename = fileURLToPath(import.meta.url);
+const candidates = [
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(path.dirname(__filename), "../.env"),
+  path.resolve(path.dirname(__filename), "../../.env"),
+  path.resolve(path.dirname(__filename), "../../../.env"),
+];
+for (const p of candidates) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p });
+    break;
+  }
+}
 
 function bool(v: string | undefined, def = false): boolean {
   if (v == null) return def;
