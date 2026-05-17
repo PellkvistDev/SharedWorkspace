@@ -223,6 +223,39 @@ export default function FileExplorer() {
     } catch (e: any) { alert(e.message); }
   };
 
+  const newFile = async () => {
+    const name = prompt("New file name (include extension, e.g. notes.md):");
+    if (!name) return;
+    const target = data?.cwd ? `${data.cwd}/${name}` : name;
+    const heading = prompt(
+      "Optional heading / first line (leave blank for empty file):",
+      ""
+    );
+    const initialContent = heading ? heading + "\n\n" : "";
+    try {
+      await api.post("/api/files/write", {
+        path: target,
+        content: initialContent,
+        encoding: "utf8",
+      });
+      load(data?.cwd || "");
+      // Open it in the editor right away
+      const fakeEntry: FileEntry = {
+        name,
+        path: target,
+        kind: "file",
+        size: initialContent.length,
+        mtime: Date.now(),
+        isText: true,
+      };
+      setSelected(fakeEntry);
+      setEditing(true);
+      setEditValue(initialContent);
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
   const renameSelected = () => selected && renameEntry(selected);
   const deleteSelected = () => selected && deleteEntry(selected);
 
@@ -320,6 +353,7 @@ export default function FileExplorer() {
             </div>
           </div>
           <div className="flex gap-1">
+            <button className="btn btn-ghost text-xs flex-1" onClick={newFile}>+ File</button>
             <button className="btn btn-ghost text-xs flex-1" onClick={newFolder}>+ Folder</button>
             <label className="btn btn-ghost text-xs flex-1 cursor-pointer">
               + Upload
