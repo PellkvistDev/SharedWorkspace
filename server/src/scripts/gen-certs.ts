@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import forge from "node-forge";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -13,14 +13,42 @@ if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
   process.exit(0);
 }
 
-const subj = "/CN=workspaceos.local";
-try {
-  execSync(
-    `openssl req -x509 -newkey rsa:2048 -nodes -keyout "${keyPath}" -out "${certPath}" -days 825 -subj "${subj}" -addext "subjectAltName=DNS:localhost,DNS:workspaceos.local,IP:127.0.0.1"`,
-    { stdio: "inherit" }
-  );
-  console.log("\nGenerated self-signed cert at", certPath);
-} catch (err) {
-  console.error("openssl is required. Install it (Git Bash on Windows ships with it) and try again.");
-  process.exit(1);
-}
+console.log("Generating 2048-bit RSA keypair (a few seconds)...");
+const keys = forge.pki.rsa.generateKeyPair(2048);
+const cert = forge.pki.createCertificate();
+
+cert.publicKey = keys.publicKey;
+cert.serialNumber = "01" + Date.now().toString(16);
+cert.validity.notBefore = new Date();
+cert.validity.notAfter = new Date();
+cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 2);
+
+const attrs = [
+  { name: "commonName", value: "workspaceos.local" },
+  { name: "organizationName", value: "WorkspaceOS" },
+];
+cert.setSubject(attrs);
+cert.setIssuer(attrs);
+cert.setExtensions([
+  { name: "basicConstraints", cA: false },
+  { name: "keyUsage", digitalSignature: true, keyEncipherment: true },
+  { name: "extKeyUsage", serverAuth: true },
+  {
+    name: "subjectAltName",
+    altNames: [
+      { type: 2, value: "localhost" },
+      { type: 2, value: "workspaceos.local" },
+      { type: 7, ip: "127.0.0.1" },
+    ],
+  },
+]);
+
+cert.sign(keys.privateKey, forge.md.sha256.create());
+
+fs.writeFileSync(keyPath, forge.pki.privateKeyToPem(keys.privateKey));
+fs.writeFileSync(certPath, forge.pki.certificateToPem(cert));
+
+console.log("\nGenerated self-signed cert:");
+console.log("  " + certPath);
+console.log("  " + keyPath);
+console.log("\nValid for 2 years. Browsers will warn on first visit — accept once.");
