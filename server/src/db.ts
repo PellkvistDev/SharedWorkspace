@@ -1,15 +1,48 @@
-import Database from "better-sqlite3";
+// Uses Node 22's built-in node:sqlite (behind --experimental-sqlite flag).
+// We expose a small better-sqlite3-compatible wrapper so call sites stay
+// unchanged: prepare(sql).run(...) / .get(...) / .all(...).
+
+import { DatabaseSync, type StatementSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "./config.js";
 
 fs.mkdirSync(config.dataDir, { recursive: true });
-
 const dbPath = path.join(config.dataDir, "workspaceos.db");
-export const db = new Database(dbPath);
 
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+const raw = new DatabaseSync(dbPath);
+
+// PRAGMAs via exec
+raw.exec("PRAGMA journal_mode = WAL");
+raw.exec("PRAGMA foreign_keys = ON");
+
+class Statement<TParams extends unknown[] = unknown[], TResult = any> {
+  constructor(private stmt: StatementSync) {}
+  run(...args: TParams): { changes: number; lastInsertRowid: number | bigint } {
+    return this.stmt.run(...(args as any)) as any;
+  }
+  get(...args: TParams): TResult | undefined {
+    return this.stmt.get(...(args as any)) as any;
+  }
+  all(...args: TParams): TResult[] {
+    return this.stmt.all(...(args as any)) as any;
+  }
+}
+
+export const db = {
+  prepare<TParams extends unknown[] = unknown[], TResult = any>(sql: string) {
+    return new Statement<TParams, TResult>(raw.prepare(sql));
+  },
+  exec(sql: string) {
+    raw.exec(sql);
+  },
+  pragma(s: string) {
+    raw.exec("PRAGMA " + s);
+  },
+  close() {
+    raw.close();
+  },
+};
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS sessions (

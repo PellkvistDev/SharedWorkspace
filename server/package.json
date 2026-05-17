@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "start": "node --experimental-sqlite dist/index.js",
     "hash-password": "tsx src/scripts/hash-password.ts",
     "gen-certs": "tsx src/scripts/gen-certs.ts"
   },
@@ -20,7 +20,6 @@
     "@workspaceos/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
     "node-forge": "^1.3.1",
-    "better-sqlite3": "^11.3.0",
     "dotenv": "^16.4.5",
     "fastify": "^5.0.0",
     "mime-types": "^2.1.35",
@@ -32,7 +31,6 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^7.6.11",
     "@types/mime-types": "^2.1.4",
     "@types/node-forge": "^1.3.11",
     "@types/node": "^22.7.4",
