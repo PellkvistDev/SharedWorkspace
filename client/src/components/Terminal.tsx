@@ -70,8 +70,11 @@ export default function Terminal({ active }: { active: boolean }) {
 
   // Mount each tab's xterm into its own DOM node — exactly once. Switching tabs
   // just toggles visibility; we never re-open() the xterm into a new node, which
-  // is what was corrupting the renderer.
+  // is what was corrupting the renderer. Also: only open when the Terminal page
+  // is actually visible in the Shell — otherwise xterm renders into a 0×0
+  // hidden parent and its keyboard handling never recovers.
   useEffect(() => {
+    if (!active) return;
     for (const tab of tabs) {
       if (tab.mounted) continue;
       const el = paneRefs.current.get(tab.id);
@@ -102,13 +105,18 @@ export default function Terminal({ active }: { active: boolean }) {
         tab.term.onResize(({ cols, rows }) => send({ type: "resize", cols, rows }));
       }
     }
-  }, [tabs]);
+  }, [tabs, active]);
 
-  // Refit active tab when it becomes visible or window resizes.
+  // Refit + focus the active tab when it becomes visible.
   useEffect(() => {
+    if (!active) return;
     const tab = tabs.find((x) => x.id === activeId);
     if (!tab || !tab.mounted) return;
-    const refit = () => { try { tab.fit.fit(); } catch {} };
+    const refit = () => {
+      try { tab.fit.fit(); } catch {}
+      try { tab.term.refresh(0, tab.term.rows - 1); } catch {}
+      try { tab.term.focus(); } catch {}
+    };
     const t = setTimeout(refit, 30);
     window.addEventListener("resize", refit);
     return () => { clearTimeout(t); window.removeEventListener("resize", refit); };
