@@ -1,0 +1,64 @@
+@import "@xterm/xterm/css/xterm.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+html:not(.dark) body {
+  @apply bg-ink-50 text-ink-900;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm
+           border border-ink-700 bg-ink-800 hover:bg-ink-700
+           text-ink-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply bg-ink-100 text-ink-900 border-ink-100 hover:bg-white;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent hover:bg-ink-800;
+  }
+  html:not(.dark) .btn {
+    @apply border-ink-200 bg-white text-ink-900 hover:bg-ink-100;
+  }
+  html:not(.dark) .btn-primary {
+    @apply bg-ink-900 text-white border-ink-900 hover:bg-ink-800;
+  }
+  html:not(.dark) .btn-ghost {
+    @apply border-transparent bg-transparent hover:bg-ink-100;
+  }
+  .input {
+    @apply w-full rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5
+           text-sm placeholder:text-ink-400 focus:outline-none focus:ring-1
+           focus:ring-ink-300;
+  }
+  html:not(.dark) .input {
+    @apply bg-white border-ink-200 text-ink-900;
+  }
+  .panel {
+    @apply bg-ink-900 border border-ink-700/60 rounded-lg;
+  }
+  html:not(.dark) .panel {
+    @apply bg-white border-ink-200;
+  }
+}
+
+.xterm-viewport::-webkit-scrollbar { width: 8px; }
+.xterm-viewport::-webkit-scrollbar-thumb { background: #3a3a40; border-radius: 4px; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(127,127,127,0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(127,127,127,0.5); }

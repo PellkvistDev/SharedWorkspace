@@ -1,0 +1,20 @@
+{
+  "name": "workspaceos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal self-hosted workspace server",
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:shared": "pnpm --filter @workspaceos/shared build",
+    "build:server": "pnpm --filter @workspaceos/server build",
+    "build:client": "pnpm --filter @workspaceos/client build",
+    "dev": "pnpm --parallel -r dev",
+    "start": "pnpm --filter @workspaceos/server start",
+    "hash-password": "pnpm --filter @workspaceos/server hash-password",
+    "gen-certs": "pnpm --filter @workspaceos/server gen-certs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.0.0"
+}
