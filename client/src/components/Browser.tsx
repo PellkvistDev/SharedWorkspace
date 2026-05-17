@@ -4,8 +4,8 @@ import { api } from "../lib/api";
 import type { Bookmark } from "@workspaceos/shared";
 
 export default function Browser() {
-  const [url, setUrl] = useState("https://www.duckduckgo.com");
-  const [inputUrl, setInputUrl] = useState("https://www.duckduckgo.com");
+  const [url, setUrl] = useState("https://html.duckduckgo.com/html/");
+  const [inputUrl, setInputUrl] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
   const [proxied, setProxied] = useState(false);
@@ -18,9 +18,23 @@ export default function Browser() {
   };
   useEffect(() => { reloadBookmarks(); }, []);
 
+  const looksLikeUrl = (s: string) => {
+    const t = s.trim();
+    if (/^https?:\/\//i.test(t)) return true;
+    if (/\s/.test(t)) return false; // any whitespace → search
+    // host-ish: has a dot and no spaces, or is localhost
+    return /^[^\s]+\.[^\s]+$/.test(t) || /^localhost(:\d+)?(\/|$)/.test(t);
+  };
+
   const navigate = (next: string, pushHistory = true) => {
     let target = next.trim();
-    if (!/^https?:\/\//i.test(target)) target = "https://" + target;
+    if (!target) return;
+    if (looksLikeUrl(target)) {
+      if (!/^https?:\/\//i.test(target)) target = "https://" + target;
+    } else {
+      // Treat as search. DuckDuckGo's HTML endpoint is iframe-friendly.
+      target = "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(target);
+    }
     setUrl(target);
     setInputUrl(target);
     setProxied(false);
@@ -29,7 +43,6 @@ export default function Browser() {
       setHistory(newHist);
       setHistoryIdx(newHist.length - 1);
     }
-    // Auto-fallback to proxy if iframe doesn't load in time.
     if (loadTimer.current) window.clearTimeout(loadTimer.current);
     loadTimer.current = window.setTimeout(() => {
       // We can't reliably read iframe contents (cross-origin), so we offer a button.
@@ -116,10 +129,10 @@ export default function Browser() {
           onSubmit={(e) => { e.preventDefault(); navigate(inputUrl); }}
         >
           <input
-            className="input flex-1 text-xs font-mono"
+            className="input flex-1 text-xs"
             value={inputUrl}
             onChange={(e) => setInputUrl(e.target.value)}
-            placeholder="URL"
+            placeholder="Search or enter URL"
           />
           <button className="btn btn-primary text-xs">Go</button>
         </form>
