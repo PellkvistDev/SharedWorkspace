@@ -21,21 +21,6 @@
   --accent-hover: #409cff;
 }
 
-html:not(.dark) {
-  color-scheme: light;
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-bg-strong: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(0, 0, 0, 0.16);
-  --glass-border-strong: rgba(0, 0, 0, 0.24);
-  --glass-highlight: rgba(255, 255, 255, 0.7);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12),
-                  0 1px 0 rgba(255, 255, 255, 0.9) inset,
-                  0 0 0 0.5px rgba(0, 0, 0, 0.04) inset;
-  --text-primary: rgba(0, 0, 0, 0.88);
-  --text-secondary: rgba(0, 0, 0, 0.58);
-  --text-tertiary: rgba(0, 0, 0, 0.36);
-}
-
 html, body, #root {
   height: 100%;
 }
@@ -68,12 +53,6 @@ body {
     url("/wallpaper.jpg") center/cover no-repeat,
     radial-gradient(ellipse at center, #061025 0%, #030714 60%, #01030a 100%);
 }
-html:not(.dark) .aurora {
-  background:
-    url("/wallpaper.jpg") center/cover no-repeat,
-    radial-gradient(ellipse at top, #e8f0ff 0%, #f5f0ff 55%, #f0f5ff 100%);
-}
-
 /* Subtle film grain — keeps the glass surfaces feeling tactile. */
 .aurora__grain {
   position: absolute; inset: 0;
@@ -139,13 +118,13 @@ html:not(.dark) .aurora {
   }
 
   .btn-ghost {
-    background: transparent;
-    border-color: transparent;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.16);
     box-shadow: none;
   }
   .btn-ghost:hover {
     background: var(--glass-bg);
-    border-color: var(--glass-border);
+    border-color: var(--glass-border-strong);
   }
 
   .input {

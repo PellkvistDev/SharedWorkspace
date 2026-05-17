@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { api } from "../lib/api";
-import { toggleTheme, getTheme } from "../lib/theme";
 import FileExplorer from "./FileExplorer";
 import Terminal from "./Terminal";
 import ClaudeChat from "./ClaudeChat";
@@ -18,7 +17,6 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 export default function Shell({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>("files");
-  const [theme, setTheme] = useState(getTheme());
 
   useEffect(() => {
     const onResize = () => {/* placeholder for future responsive logic */};
@@ -53,16 +51,6 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
           ))}
         </div>
         <div className="flex items-center gap-1">
-          <button
-            className="btn btn-ghost text-xs"
-            onClick={() => {
-              toggleTheme();
-              setTheme(getTheme());
-            }}
-            title="Toggle theme"
-          >
-            {theme === "dark" ? "☾" : "☀"}
-          </button>
           <button className="btn btn-ghost text-xs" onClick={logout}>
             Sign out
           </button>
