@@ -8,8 +8,8 @@
   color-scheme: dark;
   --glass-bg: rgba(20, 20, 28, 0.42);
   --glass-bg-strong: rgba(18, 18, 26, 0.62);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-border-strong: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-border-strong: rgba(255, 255, 255, 0.34);
   --glass-highlight: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.32),
                   0 1px 0 rgba(255, 255, 255, 0.06) inset,
@@ -25,8 +25,8 @@ html:not(.dark) {
   color-scheme: light;
   --glass-bg: rgba(255, 255, 255, 0.55);
   --glass-bg-strong: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-border-strong: rgba(0, 0, 0, 0.14);
+  --glass-border: rgba(0, 0, 0, 0.16);
+  --glass-border-strong: rgba(0, 0, 0, 0.24);
   --glass-highlight: rgba(255, 255, 255, 0.7);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12),
                   0 1px 0 rgba(255, 255, 255, 0.9) inset,
