@@ -89,7 +89,8 @@ export default function ClaudeChat({ active }: { active: boolean }) {
       cursorBlink: true,
       fontFamily: '"JetBrains Mono", ui-monospace, monospace',
       fontSize: 13,
-      theme: { background: "#08080a", foreground: "#ebebed" },
+      allowTransparency: true,
+      theme: { background: "rgba(0,0,0,0)", foreground: "#f2f2f5" },
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
@@ -135,11 +136,11 @@ export default function ClaudeChat({ active }: { active: boolean }) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-ink-800 text-xs">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-xs">
         <div className="flex items-center gap-2">
           <span className="font-semibold tracking-tight">Claude Code</span>
           {working && (
-            <span className="flex items-center gap-1 text-ink-300">
+            <span className="flex items-center gap-1 text-white/80">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               working…
             </span>
@@ -149,7 +150,7 @@ export default function ClaudeChat({ active }: { active: boolean }) {
           <button className="btn btn-ghost text-xs" onClick={interrupt}>Interrupt</button>
           <button className="btn btn-ghost text-xs" onClick={newSession}>New session</button>
           <button
-            className={clsx("btn btn-ghost text-xs", rawMode && "bg-ink-800")}
+            className={clsx("btn btn-ghost text-xs", rawMode && "bg-white/15")}
             onClick={() => setRawMode((v) => !v)}
           >
             Raw {rawMode ? "▣" : "□"}
@@ -158,7 +159,7 @@ export default function ClaudeChat({ active }: { active: boolean }) {
       </div>
 
       {rawMode ? (
-        <div ref={rawContainer} className="flex-1 min-h-0 p-2 bg-ink-950" />
+        <div ref={rawContainer} className="flex-1 min-h-0 p-2 bg-black/30 backdrop-blur-sm" />
       ) : (
         <>
           <div className="flex-1 min-h-0 overflow-auto px-4 py-4 space-y-3">
@@ -171,7 +172,7 @@ export default function ClaudeChat({ active }: { active: boolean }) {
         </>
       )}
 
-      <div className="border-t border-ink-800 p-2">
+      <div className="border-t border-white/10 p-2">
         <div className="flex gap-2 items-end">
           <textarea
             value={input}
@@ -195,10 +196,10 @@ function Bubble({ role, content, pending }: { role: string; content: string; pen
     <div className={clsx("flex", role === "user" ? "justify-end" : "justify-start")}>
       <div
         className={clsx(
-          "max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words font-mono",
+          "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words font-mono",
           role === "user"
-            ? "bg-ink-100 text-ink-900 dark:bg-ink-100 dark:text-ink-900"
-            : "bg-ink-800 text-ink-100",
+            ? "bg-gradient-to-b from-[#2a95ff] to-[#0a7aff] text-white border border-white/20 shadow-[0_4px_14px_rgba(10,122,255,0.35)]"
+            : "glass !rounded-2xl text-white/90",
           pending && "opacity-70"
         )}
       >

@@ -147,11 +147,11 @@ export default function FileExplorer() {
       {/* Sidebar */}
       <aside
         ref={dropRef}
-        className="border-r border-ink-800 flex flex-col min-h-0"
+        className="border-r border-white/10 flex flex-col min-h-0"
         onDragOver={(e) => { e.preventDefault(); }}
         onDrop={onDrop}
       >
-        <div className="p-2 border-b border-ink-800 space-y-2">
+        <div className="p-2 border-b border-white/10 space-y-2">
           <div className="flex items-center gap-1 text-xs">
             <button
               className="btn btn-ghost text-xs px-2"
@@ -160,7 +160,7 @@ export default function FileExplorer() {
             >
               ↑
             </button>
-            <div className="font-mono truncate text-ink-300 flex-1">
+            <div className="font-mono truncate text-white/80 flex-1">
               /{data?.cwd || ""}
             </div>
           </div>
@@ -200,22 +200,22 @@ export default function FileExplorer() {
               onClick={() => { setSelected(e); }}
               onDoubleClick={() => openEntry(e)}
               className={clsx(
-                "flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-ink-800/60",
-                selected?.path === e.path && "bg-ink-800"
+                "flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-white/10",
+                selected?.path === e.path && "bg-white/15"
               )}
             >
-              <span className="w-4 text-center text-ink-400">
+              <span className="w-4 text-center text-white/55">
                 {e.kind === "directory" ? "▸" : "·"}
               </span>
               <span className="flex-1 truncate">{e.name}</span>
-              <span className="text-[10px] text-ink-500 tabular-nums">
+              <span className="text-[10px] text-white/40 tabular-nums">
                 {e.kind === "directory" ? "" : fmtSize(e.size)}
               </span>
             </div>
           ))}
-          {data?.entries.length === 0 && <div className="p-3 text-xs text-ink-500">Empty folder. Drop files here.</div>}
+          {data?.entries.length === 0 && <div className="p-3 text-xs text-white/40">Empty folder. Drop files here.</div>}
         </div>
-        <div className="p-2 text-[10px] text-ink-500 border-t border-ink-800">
+        <div className="p-2 text-[10px] text-white/40 border-t border-white/10">
           Drag files anywhere on this sidebar to upload.
         </div>
       </aside>
@@ -223,19 +223,19 @@ export default function FileExplorer() {
       {/* Preview / editor pane */}
       <section className="flex flex-col min-h-0">
         {!selected && (
-          <div className="flex-1 flex items-center justify-center text-ink-500 text-sm">
+          <div className="flex-1 flex items-center justify-center text-white/40 text-sm">
             {data ? "Select a file to preview." : "Loading…"}
           </div>
         )}
         {selected && selected.kind === "directory" && (
-          <div className="flex-1 flex items-center justify-center text-sm text-ink-400">
+          <div className="flex-1 flex items-center justify-center text-sm text-white/55">
             <button className="btn" onClick={() => openEntry(selected)}>Open {selected.name}</button>
           </div>
         )}
         {selected && selected.kind === "file" && (
           <>
-            <div className="flex items-center justify-between border-b border-ink-800 px-3 py-2 text-xs">
-              <div className="font-mono truncate text-ink-300">{selected.path}</div>
+            <div className="flex items-center justify-between border-b border-white/10 px-3 py-2 text-xs">
+              <div className="font-mono truncate text-white/80">{selected.path}</div>
               <div className="flex gap-1">
                 <a
                   className="btn btn-ghost text-xs"
@@ -291,7 +291,7 @@ export default function FileExplorer() {
               )}
               {preview && preview.encoding === "base64" &&
                 !preview.mime.startsWith("image/") && preview.mime !== "application/pdf" && (
-                  <div className="p-4 text-sm text-ink-400">
+                  <div className="p-4 text-sm text-white/55">
                     Binary file ({fmtSize(preview.size)}, {preview.mime}). Download to view.
                   </div>
                 )}

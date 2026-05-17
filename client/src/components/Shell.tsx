@@ -36,7 +36,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
   return (
     <div className="flex flex-col h-full">
       {/* Top bar (desktop) */}
-      <header className="hidden md:flex items-center justify-between border-b border-ink-800 px-4 h-12">
+      <header className="hidden md:flex items-center justify-between glass-strong border-b border-white/10 px-4 h-12 relative z-10">
         <div className="flex items-center gap-1">
           <span className="font-semibold tracking-tight text-sm mr-3">WorkspaceOS</span>
           {TABS.map((t) => (
@@ -45,7 +45,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
               onClick={() => setTab(t.id)}
               className={clsx(
                 "btn btn-ghost text-sm",
-                tab === t.id && "bg-ink-800 dark:bg-ink-800"
+                tab === t.id && "!bg-white/10 !border-white/15"
               )}
             >
               <span className="opacity-70">{t.icon}</span> {t.label}
@@ -86,14 +86,14 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
       </main>
 
       {/* Bottom tab bar (mobile) */}
-      <nav className="md:hidden flex border-t border-ink-800 bg-ink-900">
+      <nav className="md:hidden flex border-t border-white/10 glass-strong">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={clsx(
               "flex-1 py-2 text-xs flex flex-col items-center gap-0.5",
-              tab === t.id ? "text-ink-100" : "text-ink-400"
+              tab === t.id ? "text-white" : "text-white/50"
             )}
           >
             <span className="text-base">{t.icon}</span>
@@ -102,7 +102,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
         ))}
         <button
           onClick={logout}
-          className="flex-1 py-2 text-xs flex flex-col items-center gap-0.5 text-ink-400"
+          className="flex-1 py-2 text-xs flex flex-col items-center gap-0.5 text-white/50"
         >
           <span className="text-base">⎋</span>
           Sign out

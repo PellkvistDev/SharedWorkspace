@@ -86,7 +86,7 @@ export default function Browser() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="border-b border-ink-800 px-2 py-2 flex items-center gap-1">
+      <div className="border-b border-white/10 px-2 py-2 flex items-center gap-1">
         <button className="btn btn-ghost text-xs" onClick={back} disabled={historyIdx <= 0}>←</button>
         <button className="btn btn-ghost text-xs" onClick={forward} disabled={historyIdx >= history.length - 1}>→</button>
         <button className="btn btn-ghost text-xs" onClick={refresh}>↻</button>
@@ -109,9 +109,9 @@ export default function Browser() {
       </div>
 
       {bookmarks.length > 0 && (
-        <div className="flex gap-1 px-2 py-1 border-b border-ink-800 overflow-x-auto">
+        <div className="flex gap-1 px-2 py-1 border-b border-white/10 overflow-x-auto">
           {bookmarks.map((b) => (
-            <div key={b.id} className="group flex items-center gap-1 rounded px-2 py-0.5 bg-ink-800/60 text-xs whitespace-nowrap">
+            <div key={b.id} className="group flex items-center gap-1 rounded px-2 py-0.5 bg-white/10 text-xs whitespace-nowrap">
               <button onClick={() => navigate(b.url)} className="hover:underline">{b.title}</button>
               <button className="opacity-30 group-hover:opacity-100" onClick={() => deleteBookmark(b.id)}>×</button>
             </div>

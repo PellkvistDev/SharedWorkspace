@@ -31,11 +31,11 @@ export default function Login({ onAuth }: { onAuth: () => void }) {
     <div className="flex h-full items-center justify-center px-4">
       <form
         onSubmit={submit}
-        className="panel w-full max-w-sm p-6 space-y-4"
+        className="panel w-full max-w-sm p-7 space-y-5"
       >
-        <div className="space-y-1">
-          <h1 className="text-lg font-semibold tracking-tight">WorkspaceOS</h1>
-          <p className="text-xs text-ink-400">Sign in to your personal workspace.</p>
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-semibold tracking-tight">WorkspaceOS</h1>
+          <p className="text-sm text-secondary">Sign in to your personal workspace.</p>
         </div>
         <input
           type="password"
@@ -46,7 +46,7 @@ export default function Login({ onAuth }: { onAuth: () => void }) {
           onChange={(e) => setPassword(e.target.value)}
         />
         {error && <div className="text-xs text-red-400">{error}</div>}
-        <button className="btn btn-primary w-full justify-center" disabled={busy || !password}>
+        <button className="btn btn-primary w-full justify-center py-2.5" disabled={busy || !password}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>

@@ -3,13 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#08080a" />
+    <meta name="theme-color" content="#0a0a0f" />
     <title>WorkspaceOS</title>
-    <link rel="preconnect" href="https://rsms.me/" />
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
   </head>
-  <body class="bg-ink-950 text-ink-100 font-sans antialiased">
-    <div id="root"></div>
+  <body class="text-white/90 font-sans antialiased overflow-hidden">
+    <!-- Aurora backdrop: animated blurred gradient orbs evoke macOS Sonoma/Sequoia wallpapers. -->
+    <div class="aurora" aria-hidden="true">
+      <div class="aurora__layer aurora__layer--a"></div>
+      <div class="aurora__layer aurora__layer--b"></div>
+      <div class="aurora__layer aurora__layer--c"></div>
+      <div class="aurora__layer aurora__layer--d"></div>
+      <div class="aurora__grain"></div>
+    </div>
+    <div id="root" class="relative"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -33,10 +33,11 @@ function makeTerm(): { term: XTerm; fit: FitAddon } {
     cursorBlink: true,
     fontFamily: '"JetBrains Mono", "Geist Mono", ui-monospace, monospace',
     fontSize: isMobile ? 12 : 13,
+    allowTransparency: true,
     theme: {
-      background: "#08080a",
-      foreground: "#ebebed",
-      cursor: "#ebebed",
+      background: "rgba(0,0,0,0)",
+      foreground: "#f2f2f5",
+      cursor: "#f2f2f5",
       black: "#0f0f11",
     },
   });
@@ -131,13 +132,13 @@ export default function Terminal({ active }: { active: boolean }) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-ink-800 overflow-x-auto">
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-white/10 overflow-x-auto">
         {tabs.map((t) => (
           <div
             key={t.id}
             className={clsx(
               "group flex items-center gap-1 px-2 py-1 rounded text-xs cursor-pointer",
-              t.id === activeId ? "bg-ink-800" : "hover:bg-ink-800/50"
+              t.id === activeId ? "bg-white/15" : "hover:bg-white/10"
             )}
             onClick={() => setActiveId(t.id)}
           >
@@ -152,8 +153,8 @@ export default function Terminal({ active }: { active: boolean }) {
         ))}
         <button className="btn btn-ghost text-xs ml-1" onClick={newTab}>+ New</button>
       </div>
-      <div ref={containerRef} className="flex-1 min-h-0 p-2 bg-ink-950" />
-      <div className="md:hidden flex gap-1 px-1 py-1 border-t border-ink-800 overflow-x-auto">
+      <div ref={containerRef} className="flex-1 min-h-0 p-2 bg-black/30 backdrop-blur-sm" />
+      <div className="md:hidden flex gap-1 px-1 py-1 border-t border-white/10 overflow-x-auto">
         {MOBILE_KEYS.map((k) => (
           <button key={k.label} className="btn btn-ghost text-xs whitespace-nowrap" onClick={() => sendKey(k.send)}>
             {k.label}
