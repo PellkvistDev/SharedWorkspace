@@ -60,9 +60,39 @@ export default function FileExplorer() {
         next.set(path, res.entries);
         return next;
       });
-    } catch (e: any) {
-      setError(e.message || "Failed to expand");
+    } catch {
+      // Path probably no longer exists (moved/deleted). Drop it from the tree.
+      setExpanded((s) => {
+        if (!s.has(path)) return s;
+        const next = new Set(s);
+        next.delete(path);
+        return next;
+      });
+      setChildren((m) => {
+        if (!m.has(path)) return m;
+        const next = new Map(m);
+        next.delete(path);
+        return next;
+      });
     }
+  }, []);
+
+  // Drop a path and all of its descendants from cached/expanded state.
+  const prunePath = useCallback((path: string) => {
+    setExpanded((s) => {
+      const next = new Set<string>();
+      for (const p of s) {
+        if (p !== path && !p.startsWith(path + "/")) next.add(p);
+      }
+      return next;
+    });
+    setChildren((m) => {
+      const next = new Map(m);
+      for (const k of m.keys()) {
+        if (k === path || k.startsWith(path + "/")) next.delete(k);
+      }
+      return next;
+    });
   }, []);
 
   const toggleExpanded = useCallback(async (entry: FileEntry) => {
@@ -116,7 +146,11 @@ export default function FileExplorer() {
     }
     try {
       await api.post("/api/files/rename", { from: sourceRelPath, to });
-      refreshAfterMutation(sourceRelPath);
+      // The source path (and everything inside it) no longer exists at that path.
+      prunePath(sourceRelPath);
+      if (selected?.path === sourceRelPath || selected?.path.startsWith(sourceRelPath + "/")) {
+        setSelected(null);
+      }
       refreshAfterMutation(to);
     } catch (e: any) {
       alert("Move failed: " + e.message);
@@ -156,7 +190,10 @@ export default function FileExplorer() {
     if (!confirm(`Delete ${label}?`)) return;
     try {
       await api.del("/api/files/delete", { path: entry.path });
-      if (selected?.path === entry.path) setSelected(null);
+      if (selected?.path === entry.path || selected?.path.startsWith(entry.path + "/")) {
+        setSelected(null);
+      }
+      prunePath(entry.path);
       refreshAfterMutation(entry.path);
     } catch (e: any) { alert(e.message); }
   };
@@ -168,8 +205,11 @@ export default function FileExplorer() {
     const to = parent ? `${parent}/${newName}` : newName;
     try {
       await api.post("/api/files/rename", { from: entry.path, to });
-      if (selected?.path === entry.path) setSelected(null);
-      refreshAfterMutation(entry.path);
+      if (selected?.path === entry.path || selected?.path.startsWith(entry.path + "/")) {
+        setSelected(null);
+      }
+      prunePath(entry.path);
+      refreshAfterMutation(to);
     } catch (e: any) { alert(e.message); }
   };
 
