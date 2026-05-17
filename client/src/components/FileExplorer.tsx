@@ -227,30 +227,15 @@ export default function FileExplorer() {
     const name = prompt("New file name (include extension, e.g. notes.md):");
     if (!name) return;
     const target = data?.cwd ? `${data.cwd}/${name}` : name;
-    const heading = prompt(
-      "Optional heading / first line (leave blank for empty file):",
-      ""
-    );
-    const initialContent = heading ? heading + "\n\n" : "";
     try {
-      await api.post("/api/files/write", {
-        path: target,
-        content: initialContent,
-        encoding: "utf8",
-      });
+      await api.post("/api/files/write", { path: target, content: "", encoding: "utf8" });
       load(data?.cwd || "");
-      // Open it in the editor right away
       const fakeEntry: FileEntry = {
-        name,
-        path: target,
-        kind: "file",
-        size: initialContent.length,
-        mtime: Date.now(),
-        isText: true,
+        name, path: target, kind: "file", size: 0, mtime: Date.now(), isText: true,
       };
       setSelected(fakeEntry);
       setEditing(true);
-      setEditValue(initialContent);
+      setEditValue("");
     } catch (e: any) {
       alert(e.message);
     }
@@ -353,9 +338,19 @@ export default function FileExplorer() {
             </div>
           </div>
           <div className="flex gap-1">
-            <button className="btn btn-ghost text-xs flex-1" onClick={newFile}>+ File</button>
-            <button className="btn btn-ghost text-xs flex-1" onClick={newFolder}>+ Folder</button>
-            <label className="btn btn-ghost text-xs flex-1 cursor-pointer">
+            <button
+              className="btn btn-ghost text-xs flex-1 !px-2 justify-center whitespace-nowrap"
+              onClick={newFile}
+            >
+              + File
+            </button>
+            <button
+              className="btn btn-ghost text-xs flex-1 !px-2 justify-center whitespace-nowrap"
+              onClick={newFolder}
+            >
+              + Folder
+            </button>
+            <label className="btn btn-ghost text-xs flex-1 !px-2 justify-center whitespace-nowrap cursor-pointer">
               + Upload
               <input
                 type="file"
