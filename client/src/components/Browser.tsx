@@ -3,13 +3,28 @@ import clsx from "clsx";
 import { api } from "../lib/api";
 import type { Bookmark } from "@workspaceos/shared";
 
+interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+function safeHostname(u: string): string {
+  try { return new URL(u).hostname; } catch { return u; }
+}
+
 export default function Browser() {
-  const [url, setUrl] = useState("https://html.duckduckgo.com/html/");
+  const [url, setUrl] = useState("");
   const [inputUrl, setInputUrl] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
   const [proxied, setProxied] = useState(false);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [mode, setMode] = useState<"start" | "page" | "search">("start");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [searchBusy, setSearchBusy] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const loadTimer = useRef<number | null>(null);
 
@@ -26,52 +41,72 @@ export default function Browser() {
     return /^[^\s]+\.[^\s]+$/.test(t) || /^localhost(:\d+)?(\/|$)/.test(t);
   };
 
-  const navigate = (next: string, pushHistory = true) => {
-    let target = next.trim();
-    if (!target) return;
-    if (looksLikeUrl(target)) {
-      if (!/^https?:\/\//i.test(target)) target = "https://" + target;
-    } else {
-      // Treat as search. DuckDuckGo's HTML endpoint is iframe-friendly.
-      target = "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(target);
+  const runSearch = async (q: string) => {
+    setSearchBusy(true);
+    setSearchError(null);
+    setSearchResults(null);
+    setSearchQuery(q);
+    setMode("search");
+    setInputUrl(q);
+    try {
+      const r = await api.get<{ results: SearchResult[] }>(
+        "/api/search?q=" + encodeURIComponent(q)
+      );
+      setSearchResults(r.results);
+    } catch (e: any) {
+      setSearchError(e.message || "Search failed");
+    } finally {
+      setSearchBusy(false);
     }
-    setUrl(target);
-    setInputUrl(target);
+  };
+
+  const navigate = (next: string, pushHistory = true) => {
+    const target = next.trim();
+    if (!target) return;
+    if (!looksLikeUrl(target)) {
+      // Search via our server-side scraper. Renders results inline; no iframe.
+      if (pushHistory) {
+        const newHist = history.slice(0, historyIdx + 1).concat("search:" + target);
+        setHistory(newHist);
+        setHistoryIdx(newHist.length - 1);
+      }
+      runSearch(target);
+      return;
+    }
+    const fullUrl = /^https?:\/\//i.test(target) ? target : "https://" + target;
+    setUrl(fullUrl);
+    setInputUrl(fullUrl);
     setProxied(false);
+    setMode("page");
     if (pushHistory) {
-      const newHist = history.slice(0, historyIdx + 1).concat(target);
+      const newHist = history.slice(0, historyIdx + 1).concat(fullUrl);
       setHistory(newHist);
       setHistoryIdx(newHist.length - 1);
     }
     if (loadTimer.current) window.clearTimeout(loadTimer.current);
-    loadTimer.current = window.setTimeout(() => {
-      // We can't reliably read iframe contents (cross-origin), so we offer a button.
-      // Don't auto-proxy — the user opts in.
-    }, 3000);
   };
 
   const onIframeLoad = () => {
     if (loadTimer.current) window.clearTimeout(loadTimer.current);
   };
 
-  const back = () => {
-    if (historyIdx <= 0) return;
-    const i = historyIdx - 1;
+  const goToHistory = (i: number) => {
+    const entry = history[i];
     setHistoryIdx(i);
-    setUrl(history[i]);
-    setInputUrl(history[i]);
     setProxied(false);
+    if (entry.startsWith("search:")) {
+      runSearch(entry.slice("search:".length));
+    } else {
+      setUrl(entry);
+      setInputUrl(entry);
+      setMode("page");
+    }
   };
-  const forward = () => {
-    if (historyIdx >= history.length - 1) return;
-    const i = historyIdx + 1;
-    setHistoryIdx(i);
-    setUrl(history[i]);
-    setInputUrl(history[i]);
-    setProxied(false);
-  };
+  const back = () => historyIdx > 0 && goToHistory(historyIdx - 1);
+  const forward = () => historyIdx < history.length - 1 && goToHistory(historyIdx + 1);
   const refresh = () => {
-    if (iframeRef.current) iframeRef.current.src = displayedSrc();
+    if (mode === "search") runSearch(searchQuery);
+    else if (iframeRef.current) iframeRef.current.src = displayedSrc();
   };
 
   const enableProxy = () => setProxied(true);
@@ -156,19 +191,62 @@ export default function Browser() {
         </div>
       )}
 
-      <div className={clsx("flex-1 min-h-0 relative", proxied && "ring-2 ring-amber-500/40")}>
-        {proxied && (
-          <div className="absolute top-0 left-0 right-0 z-10 bg-amber-500/20 text-amber-200 text-[10px] text-center py-0.5">
-            Proxied mode — page rendered via server. Relative links may be approximate.
+      <div className={clsx("flex-1 min-h-0 relative", proxied && mode === "page" && "ring-2 ring-amber-500/40")}>
+        {mode === "start" && (
+          <div className="h-full flex flex-col items-center justify-center gap-4 text-center px-6">
+            <div className="text-2xl font-semibold tracking-tight">Search or enter URL</div>
+            <div className="text-sm text-white/55 max-w-md">
+              Type words to search (DuckDuckGo, rendered here). Type a URL or domain to open it
+              in the embedded browser. Use the <span className="font-semibold">Proxy</span> button
+              for sites that refuse to be framed.
+            </div>
           </div>
         )}
-        <iframe
-          ref={iframeRef}
-          src={displayedSrc()}
-          className="w-full h-full bg-white"
-          onLoad={onIframeLoad}
-          sandbox="allow-scripts allow-forms allow-popups allow-same-origin"
-        />
+
+        {mode === "search" && (
+          <div className="h-full overflow-auto p-6 max-w-3xl mx-auto">
+            <div className="text-xs text-white/55 mb-3">
+              Results for <span className="text-white/90 font-semibold">{searchQuery}</span>
+            </div>
+            {searchBusy && <div className="text-sm text-white/55">Searching…</div>}
+            {searchError && <div className="text-sm text-red-400">{searchError}</div>}
+            {!searchBusy && searchResults && searchResults.length === 0 && (
+              <div className="text-sm text-white/55">No results.</div>
+            )}
+            <ul className="space-y-4">
+              {searchResults?.map((r, i) => (
+                <li key={i} className="panel p-3">
+                  <div className="text-[10px] text-white/40 truncate">{safeHostname(r.url)}</div>
+                  <a
+                    href={r.url}
+                    onClick={(e) => { e.preventDefault(); navigate(r.url); }}
+                    className="text-sky-300 hover:text-sky-200 hover:underline text-base font-medium"
+                  >
+                    {r.title}
+                  </a>
+                  <div className="text-xs text-white/70 mt-1">{r.snippet}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {mode === "page" && (
+          <>
+            {proxied && (
+              <div className="absolute top-0 left-0 right-0 z-10 bg-amber-500/20 text-amber-200 text-[10px] text-center py-0.5">
+                Proxied mode — page rendered via server. Relative links may be approximate.
+              </div>
+            )}
+            <iframe
+              ref={iframeRef}
+              src={displayedSrc()}
+              className="w-full h-full bg-white"
+              onLoad={onIframeLoad}
+              sandbox="allow-scripts allow-forms allow-popups allow-same-origin"
+            />
+          </>
+        )}
       </div>
     </div>
   );

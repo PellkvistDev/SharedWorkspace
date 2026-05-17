@@ -16,6 +16,7 @@ import { registerFilesRoutes } from "./routes/files-routes.js";
 import { registerBookmarksRoutes } from "./routes/bookmarks-routes.js";
 import { registerProxyRoutes } from "./routes/proxy-routes.js";
 import { registerDownloadsRoutes } from "./routes/downloads-routes.js";
+import { registerSearchRoutes } from "./routes/search-routes.js";
 import { registerSessionsRoutes } from "./routes/sessions-routes.js";
 import { registerTerminalWs } from "./ws/terminal-ws.js";
 import { registerClaudeWs } from "./ws/claude-ws.js";
@@ -104,6 +105,7 @@ async function build() {
   await registerBookmarksRoutes(app);
   await registerProxyRoutes(app);
   await registerDownloadsRoutes(app);
+  await registerSearchRoutes(app);
   await registerSessionsRoutes(app);
   await registerTerminalWs(app);
   await registerClaudeWs(app);
