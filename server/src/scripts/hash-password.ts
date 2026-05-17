@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import readline from "node:readline";
 
 async function prompt(q: string, hidden = false): Promise<string> {
