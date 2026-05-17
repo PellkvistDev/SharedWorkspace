@@ -9,7 +9,7 @@ export default function ClaudeChat({ active }: { active: boolean }) {
   const [pendingAssistant, setPendingAssistant] = useState<string>("");
   const [working, setWorking] = useState(false);
   const [input, setInput] = useState("");
-  const [rawMode, setRawMode] = useState(false);
+  const [rawMode, setRawMode] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const rawContainer = useRef<HTMLDivElement>(null);
@@ -74,13 +74,22 @@ export default function ClaudeChat({ active }: { active: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Raw-mode xterm
+  // Raw-mode xterm. Only mount once the Claude tab is actually visible —
+  // otherwise xterm opens into a display:none parent and keyboard input
+  // breaks (same bug as the Terminal tab).
   useEffect(() => {
-    if (!rawMode) {
-      if (rawTermRef.current) {
+    if (!rawMode || !active) {
+      if (rawTermRef.current && !rawMode) {
         try { rawTermRef.current.term.dispose(); } catch {}
         rawTermRef.current = null;
       }
+      return;
+    }
+    if (rawTermRef.current) {
+      // Already mounted — just refit + focus on becoming active again.
+      try { rawTermRef.current.fit.fit(); } catch {}
+      try { rawTermRef.current.term.refresh(0, rawTermRef.current.term.rows - 1); } catch {}
+      try { rawTermRef.current.term.focus(); } catch {}
       return;
     }
     if (!rawContainer.current) return;
@@ -97,16 +106,27 @@ export default function ClaudeChat({ active }: { active: boolean }) {
     rawContainer.current.innerHTML = "";
     term.open(rawContainer.current);
     fit.fit();
+    term.focus();
+    // Send initial size so claude renders to the right viewport
+    const ws0 = wsRef.current;
+    if (ws0?.readyState === ws0?.OPEN) {
+      ws0!.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows } as ClientClaudeMsg));
+    }
     term.onData((d) => {
       const ws = wsRef.current;
       const msg: ClientClaudeMsg = { type: "raw-input", data: d };
+      if (ws?.readyState === ws?.OPEN) ws!.send(JSON.stringify(msg));
+    });
+    term.onResize(({ cols, rows }) => {
+      const ws = wsRef.current;
+      const msg: ClientClaudeMsg = { type: "resize", cols, rows };
       if (ws?.readyState === ws?.OPEN) ws!.send(JSON.stringify(msg));
     });
     rawTermRef.current = { term, fit };
     const onR = () => { try { fit.fit(); } catch {} };
     window.addEventListener("resize", onR);
     return () => window.removeEventListener("resize", onR);
-  }, [rawMode]);
+  }, [rawMode, active]);
 
   useEffect(() => {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
