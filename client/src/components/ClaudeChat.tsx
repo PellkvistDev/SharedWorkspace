@@ -21,12 +21,28 @@ export default function ClaudeChat({ active }: { active: boolean }) {
       try { wsRef.current.close(); } catch {}
       wsRef.current = null;
     }
+    // Use the current xterm dimensions if it's mounted, so claude lays out to
+    // fit the pane instead of getting clipped at the hardcoded default.
+    const cols = rawTermRef.current?.term.cols ?? 100;
+    const rows = rawTermRef.current?.term.rows ?? 30;
     const proto = location.protocol === "https:" ? "wss" : "ws";
     const id = forceNew ? "" : sessionId || "";
-    const url = `${proto}://${location.host}/ws/claude?cols=100&rows=30${id ? `&sessionId=${id}` : ""}`;
+    const url = `${proto}://${location.host}/ws/claude?cols=${cols}&rows=${rows}${id ? `&sessionId=${id}` : ""}`;
     const ws = new WebSocket(url);
     wsRef.current = ws;
     setPendingAssistant("");
+    if (forceNew) {
+      try { rawTermRef.current?.term.reset(); } catch {}
+    }
+    ws.onopen = () => {
+      // Also send a resize once open so the new claude pty matches our pane.
+      if (rawTermRef.current) {
+        const t = rawTermRef.current.term;
+        try {
+          ws.send(JSON.stringify({ type: "resize", cols: t.cols, rows: t.rows } as ClientClaudeMsg));
+        } catch {}
+      }
+    };
     ws.onmessage = (ev) => {
       const msg: ServerClaudeMsg = JSON.parse(ev.data);
       switch (msg.type) {
