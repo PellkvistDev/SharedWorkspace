@@ -101,17 +101,10 @@ html:not(.dark) .aurora__layer {
   background: radial-gradient(circle, #00c2ff 0%, transparent 70%);
   animation: drift-c 36s ease-in-out infinite;
 }
-.aurora__layer--d {
-  width: 45vw; height: 45vw;
-  bottom: -20vw; right: 5vw;
-  background: radial-gradient(circle, #bf5af2 0%, transparent 70%);
-  animation: drift-d 30s ease-in-out infinite;
-}
 
 html:not(.dark) .aurora__layer--a { background: radial-gradient(circle, #ff9ec5 0%, transparent 70%); }
 html:not(.dark) .aurora__layer--b { background: radial-gradient(circle, #a5b4ff 0%, transparent 70%); }
 html:not(.dark) .aurora__layer--c { background: radial-gradient(circle, #8fd9ff 0%, transparent 70%); }
-html:not(.dark) .aurora__layer--d { background: radial-gradient(circle, #d4a5ff 0%, transparent 70%); }
 
 @keyframes drift-a {
   0%, 100% { transform: translate(0, 0) scale(1); }
@@ -124,10 +117,6 @@ html:not(.dark) .aurora__layer--d { background: radial-gradient(circle, #d4a5ff 
 @keyframes drift-c {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50%      { transform: translate(10vw, -8vh) scale(1.05); }
-}
-@keyframes drift-d {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50%      { transform: translate(-8vw, -6vh) scale(1.08); }
 }
 
 @media (prefers-reduced-motion: reduce) {
